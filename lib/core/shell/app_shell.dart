@@ -29,22 +29,19 @@ class AppShell extends StatelessWidget {
           navigationShell,
         ],
       ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            _GlassTabBar(
-              currentIndex: navigationShell.currentIndex,
-              onSelected: _go,
-            ),
-            Positioned(
-              top: -18,
-              child: LogButton(onTap: () => context.push('/log')),
-            ),
-          ],
-        ),
+      bottomNavigationBar: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          _GlassTabBar(
+            currentIndex: navigationShell.currentIndex,
+            onSelected: _go,
+          ),
+          Positioned(
+            top: -18,
+            child: LogButton(onTap: () => context.push('/log')),
+          ),
+        ],
       ),
     );
   }
@@ -101,6 +98,7 @@ class _GlassTabBar extends StatelessWidget {
   static const _tabs = [
     _TabData(Icons.grid_view_rounded, 'Summary'),
     _TabData(Icons.trending_up_rounded, 'Trends'),
+    _TabData(Icons.emoji_events_rounded, 'Awards'),
     _TabData(Icons.event_note_rounded, 'History'),
   ];
 
@@ -133,6 +131,9 @@ class _GlassTabBar extends StatelessWidget {
             child: Row(
               children: [
                 for (var i = 0; i < _tabs.length; i++) ...[
+                  // Center gap for the Log button: with four tabs (two on
+                  // each side) this lands the gap at the true horizontal
+                  // center of the bar.
                   if (i == 2) const SizedBox(width: 76),
                   Expanded(
                     child: _TabButton(
@@ -142,8 +143,6 @@ class _GlassTabBar extends StatelessWidget {
                     ),
                   ),
                 ],
-                // Balances the center gap so the Log button sits at true center.
-                const Expanded(child: SizedBox()),
               ],
             ),
           ),
@@ -170,42 +169,40 @@ class _TabButton extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(24),
       onTap: onTap,
-      child: AnimatedSwitcher(
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 260),
-        switchInCurve: Curves.easeOutCubic,
-        transitionBuilder: (child, anim) => FadeTransition(
-          opacity: anim,
-          child: ScaleTransition(scale: anim, child: child),
+        curve: Curves.easeOutCubic,
+        height: 52,
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Container(
-          key: ValueKey(selected),
-          height: 52,
-          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: selected
-                ? Colors.white.withValues(alpha: 0.10)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(data.icon, size: 21, color: color),
-              if (selected) ...[
-                const SizedBox(width: 8),
-                Text(
-                  data.label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                    letterSpacing: -0.1,
-                  ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              data.icon,
+              size: 20,
+              color: selected ? AppTheme.accent : color,
+            ),
+            const SizedBox(height: 3),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                data.label,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                  letterSpacing: -0.1,
                 ),
-              ],
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

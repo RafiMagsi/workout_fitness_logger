@@ -49,7 +49,13 @@ class _ProgressPageState extends ConsumerState<ProgressPage> {
 
   Widget _buildBody(BuildContext context, List<WorkoutEntry> entries) {
     final today = DateTime.now();
-    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    // Normalize to midnight or entries earlier in the week day leak into the
+    // previous day's bucket (Duration.inDays truncates).
+    final weekStart = DateTime(
+      today.year,
+      today.month,
+      today.day - (today.weekday - 1),
+    );
 
     final metricEntries =
         entries.where((e) => e.metricType == _selectedMetric).toList();
@@ -241,6 +247,8 @@ class _MetricSelector extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
+              height: 40,
+              alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: isSelected

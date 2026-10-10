@@ -6,8 +6,11 @@ This app is intended to be filmed as a short demo reel: a single tap to log, an 
 
 ## Design direction
 
-- Dark, space-inspired surface palette with soft glassy cards
-- Apple Fitness-inspired activity rings module for today's progress
+- Dark, space-inspired surface palette with soft glassy cards and ambient
+  background glows (2026 "liquid glass" treatment)
+- Apple Fitness-inspired activity rings module using authentic HIG colors
+  (Move #FA114F, Exercise #92E82A, Stand #1EE4E1) with white closed-ring
+  overlays at 100%+
 - Motion-forward cards and charts with gentle entrances and scaling
 - Metric-aware logging: move, exercise, stand, active minutes, steps, weight, and more
 - Quick type selection, fast numeric entry, optional note
@@ -16,10 +19,18 @@ This app is intended to be filmed as a short demo reel: a single tap to log, an 
 
 ## Screens
 
-- `/` Home — activity rings, today summary tiles, quick actions, recent activity
-- `/log` Log — fast contextual workout entry with type chips, duration, value, metric toggle, note
-- `/progress` Progress — animated charts, metric switching, weekly view, trend and highlights
-- `/history` History — grouped timeline by day with metric chips and notes
+- `/` Summary — hero activity rings (authentic Apple colors), daily metric
+  tiles, 7-day "This Week" bar chart, all-time stats strip, latest workouts
+- `/progress` Trends — metric pill selector, weekly bar chart, trend deltas,
+  period chips, share, highlights
+- `/awards` Awards — computed achievement medals (streaks, goal closes,
+  records) with locked/unlocked progress
+- `/history` History — grouped-by-day timeline with metric chips and notes
+- `/log` Log — iOS-style modal with workout type grid, big numeric fields,
+  metric toggle, note
+
+Navigation is a floating "liquid glass" bottom bar (Summary · Trends ·
+Awards · History) with a center gradient Log button.
 
 ## Architecture
 

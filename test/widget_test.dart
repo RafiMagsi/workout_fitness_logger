@@ -68,6 +68,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Trends'), findsWidgets);
 
+    await tester.tap(find.byIcon(Icons.emoji_events_rounded));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Awards'), findsWidgets);
+
     await tester.tap(find.byIcon(Icons.event_note_rounded));
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('History'), findsWidgets);

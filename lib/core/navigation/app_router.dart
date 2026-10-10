@@ -4,12 +4,19 @@ import 'package:go_router/go_router.dart';
 import '../../features/workout/presentation/pages/home_page.dart';
 import '../../features/workout/presentation/pages/log_page.dart';
 import '../../features/progress/presentation/pages/progress_page.dart';
+import '../../features/awards/presentation/pages/awards_page.dart';
 import '../../features/history/presentation/pages/history_page.dart';
 import '../shell/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Dev/QA hook: override the launch tab (e.g. /progress) without editing
+  // routes elsewhere.
+  const initialLocation = String.fromEnvironment(
+    'INITIAL_LOCATION',
+    defaultValue: '/',
+  );
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: initialLocation,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -33,6 +40,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 name: 'progress',
                 pageBuilder: (context, state) => const NoTransitionPage(
                   child: ProgressPage(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/awards',
+                name: 'awards',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                  child: AwardsPage(),
                 ),
               ),
             ],

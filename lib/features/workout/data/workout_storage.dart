@@ -75,60 +75,94 @@ class WorkoutStorage {
     final loaded = await load();
     if (loaded.isNotEmpty) return;
     final now = DateTime.now();
+    DateTime at(int daysAgo, int hour, [int minute = 0]) {
+      final base = now.subtract(Duration(days: daysAgo));
+      return DateTime(base.year, base.month, base.day, hour, minute);
+    }
+
     final demoEntries = [
+      // Today — so rings, tiles, and streak light up on first launch.
+      WorkoutEntry(
+        id: 'demo-t1',
+        timestamp: at(0, 8, 15),
+        exerciseType: ExerciseType.running,
+        durationMinutes: 35,
+        value: 320,
+        metricType: FitnessMetricType.move,
+        note: 'Morning pace',
+      ),
+      WorkoutEntry(
+        id: 'demo-t2',
+        timestamp: at(0, 12, 40),
+        exerciseType: ExerciseType.walking,
+        durationMinutes: 15,
+        value: 90,
+        metricType: FitnessMetricType.move,
+        note: 'Lunch walk',
+      ),
+      WorkoutEntry(
+        id: 'demo-t3',
+        timestamp: at(0, 18, 20),
+        exerciseType: ExerciseType.strength,
+        durationMinutes: 40,
+        value: 40,
+        metricType: FitnessMetricType.activeMinutes,
+        note: 'Push day',
+      ),
+      // Yesterday — keeps the streak alive.
+      WorkoutEntry(
+        id: 'demo-y1',
+        timestamp: at(1, 19, 0),
+        exerciseType: ExerciseType.cycling,
+        durationMinutes: 45,
+        value: 480,
+        metricType: FitnessMetricType.move,
+        note: 'Long ride',
+      ),
       WorkoutEntry(
         id: 'demo-1',
-        timestamp: now.subtract(const Duration(days: 14)),
+        timestamp: at(3, 7, 30),
         exerciseType: ExerciseType.running,
         durationMinutes: 30,
-        value: 3.2,
+        value: 280,
         metricType: FitnessMetricType.move,
         note: 'Easy pace',
       ),
       WorkoutEntry(
         id: 'demo-2',
-        timestamp: now.subtract(const Duration(days: 12)),
-        exerciseType: ExerciseType.running,
-        durationMinutes: 32,
-        value: 3.6,
-        metricType: FitnessMetricType.move,
-        note: 'First hill repeat',
-      ),
-      WorkoutEntry(
-        id: 'demo-3',
-        timestamp: now.subtract(const Duration(days: 10)),
+        timestamp: at(5, 17, 45),
         exerciseType: ExerciseType.strength,
         durationMinutes: 40,
-        value: 0,
+        value: 40,
         metricType: FitnessMetricType.activeMinutes,
         note: 'Upper body',
       ),
       WorkoutEntry(
         id: 'demo-4',
-        timestamp: now.subtract(const Duration(days: 7)),
+        timestamp: at(7, 8, 0),
         exerciseType: ExerciseType.running,
         durationMinutes: 35,
-        value: 4.1,
+        value: 360,
         metricType: FitnessMetricType.move,
         note: 'Felt strong',
       ),
       WorkoutEntry(
         id: 'demo-5',
-        timestamp: now.subtract(const Duration(days: 4)),
+        timestamp: at(10, 9, 30),
         exerciseType: ExerciseType.cycling,
-        durationMinutes: 45,
-        value: 12.4,
+        durationMinutes: 60,
+        value: 520,
         metricType: FitnessMetricType.move,
-        note: 'Long ride',
+        note: 'Hill loop',
       ),
       WorkoutEntry(
         id: 'demo-6',
-        timestamp: now.subtract(const Duration(days: 2)),
-        exerciseType: ExerciseType.running,
-        durationMinutes: 38,
-        value: 4.6,
-        metricType: FitnessMetricType.move,
-        note: 'Beat last week',
+        timestamp: at(12, 18, 10),
+        exerciseType: ExerciseType.yoga,
+        durationMinutes: 25,
+        value: 25,
+        metricType: FitnessMetricType.activeMinutes,
+        note: 'Recovery flow',
       ),
     ];
     for (final entry in demoEntries) {

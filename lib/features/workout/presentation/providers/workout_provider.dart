@@ -92,12 +92,15 @@ class TodayProgress {
     const targetExerciseMinutes = 30.0;
     const targetStandHours = 12.0;
 
+    // Percentages are intentionally not capped at 1.0 — the rings render an
+    // Apple-style white overlay for each extra lap past the goal.
+    double ratio(double value, double target) =>
+        value <= 0 ? 0 : value / target;
+
     return TodayProgress(
-      movePercent: (totalMove / targetMove).clamp(0, 1).toDouble(),
-      exercisePercent:
-          (exerciseMinutes / targetExerciseMinutes).clamp(0, 1).toDouble(),
-      standPercent:
-          (activeHours.length / targetStandHours).clamp(0, 1).toDouble(),
+      movePercent: ratio(totalMove, targetMove),
+      exercisePercent: ratio(exerciseMinutes, targetExerciseMinutes),
+      standPercent: ratio(activeHours.length.toDouble(), targetStandHours),
       totalMove: totalMove,
       totalExerciseMinutes: exerciseMinutes,
       totalStandHours: activeHours.length,

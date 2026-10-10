@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import '../../domain/workout_entry.dart';
+import '../../domain/metrics.dart';
 import '../providers/workout_provider.dart';
 import '../../../../core/theme/app.dart';
 import '../../../../shared/widgets/activity_rings.dart';
@@ -40,10 +41,6 @@ class HomePage extends ConsumerWidget {
     int streak,
   ) {
     final now = DateTime.now();
-    final todayEntries = entries.where((e) {
-      final t = e.timestamp;
-      return t.year == now.year && t.month == now.month && t.day == now.day;
-    }).toList();
 
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(workoutEntriesProvider),
@@ -145,6 +142,19 @@ class HomePage extends ConsumerWidget {
                       ),
                     ],
                   ).animate().fadeIn(delay: 120.ms, duration: 400.ms),
+                  const SizedBox(height: 14),
+
+                  // ---- This week --------------------------------------------
+                  _WeeklyCard(entries: entries)
+                      .animate()
+                      .fadeIn(delay: 180.ms, duration: 400.ms)
+                      .slideY(begin: 0.05, end: 0, duration: 400.ms),
+                  const SizedBox(height: 14),
+
+                  // ---- All-time stats ---------------------------------------
+                  _StatsStrip(entries: entries)
+                      .animate()
+                      .fadeIn(delay: 240.ms, duration: 400.ms),
                   const SizedBox(height: 24),
 
                   // ---- Latest workouts --------------------------------------
@@ -168,12 +178,10 @@ class HomePage extends ConsumerWidget {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverList.separated(
-                itemCount: todayEntries.isEmpty ? 3 : todayEntries.length,
+                itemCount: entries.length > 5 ? 5 : entries.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final list = todayEntries.isEmpty ? entries : todayEntries;
-                  if (index >= list.length) return const SizedBox.shrink();
-                  return _WorkoutRow(entry: list[index])
+                  return _WorkoutRow(entry: entries[index])
                       .animate()
                       .fadeIn(
                         delay: (150 + index * 60).ms,
@@ -191,6 +199,265 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Seven-day Move bar chart with weekly totals — the "scroll payoff" card.
+class _WeeklyCard extends StatelessWidget {
+  final List<WorkoutEntry> entries;
+
+  const _WeeklyCard({required this.entries});
+
+  static const _labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    // Week starts Monday at midnight (midnight matters: inDays truncates).
+    final weekStart = DateTime(now.year, now.month, now.day - (now.weekday - 1));
+
+    final kcalByDay = List<double>.filled(7, 0);
+    final workoutsByDay = List<int>.filled(7, 0);
+    var weekKcal = 0.0;
+    var weekMinutes = 0.0;
+    var weekWorkouts = 0;
+
+    for (final e in entries) {
+      final diff = e.timestamp.difference(weekStart).inDays;
+      if (diff < 0 || diff > 6 || e.timestamp.isAfter(now)) continue;
+      weekWorkouts++;
+      weekMinutes += e.durationMinutes;
+      workoutsByDay[diff] += 1;
+      if (e.metricType == FitnessMetricType.move) {
+        kcalByDay[diff] += e.value;
+        weekKcal += e.value;
+      }
+    }
+
+    final maxKcal = [
+      ...kcalByDay,
+      600.0,
+    ].reduce((a, b) => a > b ? a : b);
+    final todayIndex = now.weekday - 1;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        gradient: AppTheme.glassSheen,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'This Week',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${weekKcal.toStringAsFixed(0)} kcal',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppTheme.move,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '$weekWorkouts workout${weekWorkouts == 1 ? '' : 's'} · '
+            '${weekMinutes.toStringAsFixed(0)} min trained',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 96,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (workoutsByDay[i] > 0 && kcalByDay[i] > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 5),
+                              child: Text(
+                                kcalByDay[i].toStringAsFixed(0),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: i == todayIndex
+                                      ? AppTheme.move
+                                      : AppTheme.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween(
+                              begin: 0,
+                              end: maxKcal == 0
+                                  ? 0.0
+                                  : (kcalByDay[i] / maxKcal)
+                                      .clamp(0.02, 1.0),
+                            ),
+                            duration: Duration(milliseconds: 700 + i * 90),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, t, _) => SizedBox(
+                              height: 58 * t,
+                              child: _bar(i == todayIndex,
+                                  workoutsByDay[i] > 0),
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          Text(
+                            _labels[i],
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: i == todayIndex
+                                  ? AppTheme.textPrimary
+                                  : AppTheme.textTertiary,
+                              fontWeight: i == todayIndex
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bar(bool isToday, bool hasWorkout) {
+    final color = hasWorkout ? AppTheme.move : AppTheme.border;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: hasWorkout
+              ? [
+                  color.withValues(alpha: 0.55),
+                  color,
+                ]
+              : [color.withValues(alpha: 0.5), color.withValues(alpha: 0.8)],
+        ),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: isToday && hasWorkout
+            ? [
+                BoxShadow(
+                  color: AppTheme.move.withValues(alpha: 0.55),
+                  blurRadius: 14,
+                ),
+              ]
+            : null,
+      ),
+    );
+  }
+}
+
+/// All-time totals strip — quick flex stats for the demo.
+class _StatsStrip extends StatelessWidget {
+  final List<WorkoutEntry> entries;
+
+  const _StatsStrip({required this.entries});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    var kcal = 0.0;
+    var minutes = 0.0;
+    for (final e in entries) {
+      minutes += e.durationMinutes;
+      if (e.metricType == FitnessMetricType.move) kcal += e.value;
+    }
+
+    final stats = [
+      (Icons.fitness_center_rounded, '${entries.length}', 'Workouts',
+          AppTheme.exercise),
+      (Icons.schedule_rounded, (minutes / 60).toStringAsFixed(1), 'Hours',
+          AppTheme.stand),
+      (Icons.local_fire_department_rounded, kcal.toStringAsFixed(0), 'kcal',
+          AppTheme.move),
+    ];
+
+    return Row(
+      children: [
+        for (final (icon, value, label, color) in stats) ...[
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+                borderRadius: BorderRadius.circular(18),
+                gradient: AppTheme.glassSheen,
+                border:
+                    Border.all(color: Colors.white.withValues(alpha: 0.06)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(icon, size: 18, color: color),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      Text(
+                        label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (icon != stats.last.$1) const SizedBox(width: 10),
+        ],
+      ],
     );
   }
 }
@@ -480,9 +747,7 @@ class _WorkoutRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${DateFormat('h:mm a').format(entry.timestamp)} · '
-                    '${entry.durationMinutes.toStringAsFixed(0)} min · '
-                    '${entry.displayValue} ${entry.displayUnit}',
+                    _subtitle(entry),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondary,
                     ),
@@ -501,6 +766,14 @@ class _WorkoutRow extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _subtitle(WorkoutEntry entry) {
+    final time = DateFormat('h:mm a').format(entry.timestamp);
+    final duration = '${entry.durationMinutes.toStringAsFixed(0)} min';
+    // Skip a meaningless "0" value (e.g. active-minute logs).
+    if (entry.value == 0) return '$time · $duration';
+    return '$time · $duration · ${entry.displayValue} ${entry.displayUnit}';
   }
 
   Color _accentFor(ExerciseType type) {
